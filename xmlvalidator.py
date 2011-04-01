@@ -162,3 +162,20 @@ class ContentMatchesExpressionRule(Rule):
         # Finished
         context.xpathFreeContext()
         return result
+    
+class ConditionalRule(Rule):
+    def __init__(self, name, description, rule_set):
+        Rule.__init__(self, name, description)
+        self.rule_set = rule_set
+        
+    def validate(self, doc):
+        # Check that we've been given only two rules
+        if len(self.rule_set) != 2: return False
+        
+        # If the first rule validates, then the second is required, too.
+        if self.rule_set[0].validate(doc) == True:
+            return self.rule_set[1].validate(doc)
+        else:
+            # The first rule did not validate, but doc is valid because condition means that we only fail
+            #   if the first rule is passed and the second is failed.
+            return True
