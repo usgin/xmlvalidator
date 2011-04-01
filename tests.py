@@ -159,6 +159,20 @@ class RuleTests(unittest.TestCase):
         expression = '00C02E67-F1ED'
         matches_rule = ContentMatchesExpressionRule(self.name, self.desc, xpath, expression)
         self.assertFalse(matches_rule.validate(self.valid_doc), 'Valid document validated against a ContentMatchesExpression Rule with an expression that does not match the complete content of the node')
+    
+    def test_conditional_rul(self):
+        xpath_one = '/gmd:MD_Metadata/gmd:contact/gmd:CI_ResponsibleParty/gmd:contactInfo/gmd:CI_Contact/gmd:onlineResource/gmd:CI_OnlineResource/gmd:name/gco:CharacterString'
+        xpath_two = '/gmd:MD_Metadata/gmd:contact/gmd:CI_ResponsibleParty/gmd:contactInfo/gmd:CI_Contact/gmd:onlineResource/gmd:CI_OnlineResource/gmd:linkage/gmd:URL'
+        rule_one = ValueInListRule(self.name, self.desc, xpath_one, ['icon'])
+        rule_two = ExistsRule(self.name, self.desc, xpath_two)
+        conditional_rule = ConditionalRule(self.name, self.desc, [rule_one, rule_two])
+        
+        # Test for success
+        self.assertTrue(conditional_rule.validate(self.valid_doc), 'Valid document did not validate against a Conditional Rule with a valid rule_set')
+        
+        # Test for failure: Wrong number of rules given
+        conditional_rule = ConditionalRule(self.name, self.desc, ['one', 'two', 'three'])
+        self.assertFalse(conditional_rule.validate(self.valid_doc), 'Valid document validated against a ConditionalRule with the incorrect number of rules given')
         
     def tearDown(self):
         self.valid_doc.freeDoc()
