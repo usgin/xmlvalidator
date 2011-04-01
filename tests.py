@@ -16,21 +16,23 @@ class ValidationTests(unittest.TestCase):
         self.assertTrue(os.path.exists(self.valid_filepath), 'Valid example file does not exist')
         
         # Make sure that the validator responds with TRUE when asked to parse the test file
-        self.assertTrue(record_is_valid(self.valid_filepath, 'dataset', self.rule_set))
+        result, report = record_is_valid(self.valid_filepath, self.rule_set)
+        self.assertTrue(result)
+        self.assertEqual(len(report), 0)
     
     def test_invalid_input(self):    
         # Make sure that the validator returns an appropriate exception when given bad inputs
-        self.assertRaises(ValidationException, record_is_valid, filepath=self.valid_filepath, record_type='not valid')
-        self.assertRaises(ValidationException, record_is_valid, filepath='/this/does/not/exist/', record_type='dataset')
+        self.assertRaises(ValidationException, record_is_valid, filepath='/this/does/not/exist/')
         
     def test_invalid_file(self):
-        # Make sure an appropriate exception is raised it the file is nonsense.
+        # Make sure an appropriate exception is raised if the file is nonsense.
         self.assertRaises(ValidationException, record_is_valid, filepath=self.invalid_filepath)
     
     def test_fails_rule(self):
-        # Make sure that validator fails if a rule fails
-        failed_rule_set = [ExistsRule(self.name, self.desc, '/invalid/xpath/expression')]  
-        self.assertFalse(record_is_valid(self.valid_filepath, 'dataset', failed_rule_set))  
+        # Make sure that validator fails if a rule set fails
+        failed_rule_set = [ExistsRule(self.name, self.desc, '/invalid/xpath/expression')]
+        result, report = record_is_valid(self.valid_filepath, failed_rule_set)
+        self.assertFalse(result)
         
 class RuleTests(unittest.TestCase):
     def setUp(self):

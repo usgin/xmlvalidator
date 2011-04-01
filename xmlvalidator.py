@@ -1,16 +1,19 @@
-import libxml2, os, re
+import libxml2, os, re, datetime
 from libxml2 import parserError, xpathError
 
 class ValidationException(Exception):
     def __init__(self, message='Validation problem'):
         self.msg = message
+
+class ValidationReport(list):
+    def __init__(self):
+        list.__init__(self)
+        self.run_time = datetime.datetime.now()
         
-def record_is_valid(filepath, record_type='dataset', rule_set=None):
-    # Insure request is valid: record_type must be correct
-    valid_types = ['dataset', 'service']
-    if record_type not in valid_types:
-        raise ValidationException('Requested metadata type is not valid. Valid types: ' + str(valid_types))
-    
+    def report_as_string(self):
+        return '\n\n'.join(self)
+            
+def record_is_valid(filepath, rule_set=None):
     # Insure request is valid: filepath must point to a file 
     if not os.path.exists(filepath): 
         raise ValidationException('Requested filepath to validate is not valid: ' + str(filepath))
@@ -21,14 +24,19 @@ def record_is_valid(filepath, record_type='dataset', rule_set=None):
     except parserError as (ex):
         raise ValidationException(ex.msg)
     
+    # Initiate a report
+    report = ValidationReport()
+    
     # Check each Rule
     result = True
     for rule in rule_set:
-        if rule.validate(doc) == False: result = False
-    
-    # Validation has occurred. Return the result
+        if rule.validate(doc) == False: 
+            result = False
+            report.append('FAILED: ' + rule.name + ' - ' + rule.description)
+            
+    # Validation has occurred. Return the result and report
     doc.freeDoc()
-    return result
+    return result, report.report_as_string()
 
 def register_namespaces(doc):
     context = doc.xpathNewContext()
