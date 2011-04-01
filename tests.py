@@ -160,7 +160,7 @@ class RuleTests(unittest.TestCase):
         matches_rule = ContentMatchesExpressionRule(self.name, self.desc, xpath, expression)
         self.assertFalse(matches_rule.validate(self.valid_doc), 'Valid document validated against a ContentMatchesExpression Rule with an expression that does not match the complete content of the node')
     
-    def test_conditional_rul(self):
+    def test_conditional_rule(self):
         xpath_one = '/gmd:MD_Metadata/gmd:contact/gmd:CI_ResponsibleParty/gmd:contactInfo/gmd:CI_Contact/gmd:onlineResource/gmd:CI_OnlineResource/gmd:name/gco:CharacterString'
         xpath_two = '/gmd:MD_Metadata/gmd:contact/gmd:CI_ResponsibleParty/gmd:contactInfo/gmd:CI_Contact/gmd:onlineResource/gmd:CI_OnlineResource/gmd:linkage/gmd:URL'
         rule_one = ValueInListRule(self.name, self.desc, xpath_one, ['icon'])
