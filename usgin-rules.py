@@ -286,8 +286,8 @@ class MinimumRuleSet(list):
         self.append(rule)
                                
 filepath = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'test-files', 'usgin-dataset-template.xml')
-result = record_is_valid(filepath, 'dataset', MinimumRuleSet())
+result, report = record_is_valid(filepath, 'dataset', MinimumRuleSet())
 if result == True: 
     print 'Hurrah!'
 else:
-    print 'Oh no!'
+    print report
