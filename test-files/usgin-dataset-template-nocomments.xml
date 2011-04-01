@@ -114,7 +114,7 @@
 		<gco:DateTime>2009-11-17T10:00:00</gco:DateTime>
 	</gmd:dateStamp>
 	<gmd:metadataStandardName>
-		<gco:CharacterString>ISO-USGIN</gco:CharacterString>
+		<gco:CharacterString>ISO-NAP-USGIN</gco:CharacterString>
 	</gmd:metadataStandardName>
 	<gmd:metadataStandardVersion>
 		<gco:CharacterString>1.1</gco:CharacterString>

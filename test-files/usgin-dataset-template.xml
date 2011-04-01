@@ -193,7 +193,7 @@
 	</gmd:dateStamp>
 	<!-- (M-M) metadata standard - NAP specifies "NAP - Metadata". USGIN profile conformant metadata is indicated by using “ISO-NAP-USGIN" -->
 	<gmd:metadataStandardName>
-		<gco:CharacterString>ISO-USGIN</gco:CharacterString>
+		<gco:CharacterString>ISO-NAP-USGIN</gco:CharacterString>
 	</gmd:metadataStandardName>
 	<!-- (O-M) USGIN profile version -->
 	<gmd:metadataStandardVersion>
