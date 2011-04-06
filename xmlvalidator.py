@@ -53,7 +53,7 @@ def record_is_valid(filepath, rule_set=None):
             report.append('FAILED: ' + rule.name + ' - ' + rule.description)
             
     # Validation has occurred. Return the result and report
-    return result, report.report_as_string()
+    return result, report
 
 def register_namespaces(doc):
     context = doc.xpathNewContext()
