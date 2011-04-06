@@ -1,4 +1,5 @@
-import unittest, libxml2, os
+import unittest, os
+from lxml import etree
 from xmlvalidator import *
 
 VALID_FILE = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'test-files', 'usgin-dataset-template-nocomments.xml')
@@ -38,7 +39,7 @@ class RuleTests(unittest.TestCase):
     def setUp(self):
         self.name = 'Testing Rule Name'
         self.desc = 'Testing Rule Description'
-        self.valid_doc = libxml2.parseFile(VALID_FILE)
+        self.valid_doc = etree.parse(VALID_FILE)
         
     def test_abstract_rule(self):
         abs_rule = Rule(self.name, self.desc)
@@ -81,6 +82,10 @@ class RuleTests(unittest.TestCase):
         # Test inappropriate list as proxy for invalid document content
         in_list_rule = ValueInListRule(self.name, self.desc, xpath, ['pants', 'shoes'])
         self.assertFalse(in_list_rule.validate(self.valid_doc), 'Invalid document passes list validation.')
+        # Test when xpath asks for a specific attribute
+        attr_xpath = '/gmd:MD_Metadata/gmd:characterSet/gmd:MD_CharacterSetCode/@codeListValue'
+        in_list_rule = ValueInListRule(self.name, self.desc, attr_xpath, ['utf8'])
+        self.assertTrue(in_list_rule.validate(self.valid_doc), 'Valid attribute XPath does not pass validation')
         
     def test_one_of_these_rule(self):
         valid_xpaths = ['/gmd:MD_Metadata/gmd:contact/gmd:CI_ResponsibleParty/gmd:individualName/gco:CharacterString']    
@@ -108,7 +113,7 @@ class RuleTests(unittest.TestCase):
     def test_either_or_rule(self):
         xpaths = ['/clothing/footwear/sneakers', '/clothing/footwear/hightops']
         file = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'test-files', 'either-or-test.xml')
-        one_of_doc = libxml2.parseFile(file)
+        one_of_doc = etree.parse(file)
         either_or_rule = OneOfRule(self.name, self.desc, xpaths)
         
         # Test basic attributes
@@ -177,4 +182,5 @@ class RuleTests(unittest.TestCase):
         self.assertFalse(conditional_rule.validate(self.valid_doc), 'Valid document validated against a ConditionalRule with the incorrect number of rules given')
         
     def tearDown(self):
-        self.valid_doc.freeDoc()
+        #self.valid_doc.freeDoc()
+        pass
