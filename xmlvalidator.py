@@ -1,5 +1,6 @@
-import os, re, datetime
+import os, re, datetime, urllib2
 from lxml import etree
+from urllib2 import URLError
 
 ns = {'gmd': 'http://www.isotc211.org/2005/gmd',
       'gco': 'http://www.isotc211.org/2005/gco',
@@ -20,13 +21,23 @@ class ValidationReport(list):
         return '\n\n'.join(self)
             
 def record_is_valid(filepath, rule_set=None):
-    # Insure request is valid: filepath must point to a file 
-    if not os.path.exists(filepath): 
-        raise ValidationException('Requested filepath to validate is not valid: ' + str(filepath))
+    # First, is it a valid file?
+    if os.path.exists(filepath):
+        content = filepath
+        
+    else:
+        # Not a valid file. Is it a valid URL?
+        req = urllib2.Request(filepath)
+        try:
+            content = urllib2.urlopen(req)
+        except URLError, ex:
+            raise ValidationException('Invalid URL. Returned code: ' + str(ex.code))
+        except ValueError, ex:
+            raise ValidationException('File could not be found at ' + filepath)
     
-    # Insure file is valid: Must be parse-able by libxml2
+    # Insure the document is valid: Must be parse-able by lxml
     try:
-        doc = etree.parse(filepath)
+        doc = etree.parse(content)
     except Exception as (ex):
         raise ValidationException(ex.msg)
     
