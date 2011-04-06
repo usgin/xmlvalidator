@@ -33,6 +33,7 @@ def record_is_valid(filepath, rule_set=None):
         except URLError, ex:
             raise ValidationException('Invalid URL. Returned code: ' + str(ex.code))
         except ValueError, ex:
+            # This exception is raised when the structure of filepath is invalid as a URL
             raise ValidationException('File could not be found at ' + filepath)
     
     # Insure the document is valid: Must be parse-able by lxml
