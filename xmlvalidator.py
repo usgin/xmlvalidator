@@ -31,7 +31,7 @@ def record_is_valid(filepath, rule_set=None):
         try:
             content = urllib2.urlopen(req)
         except URLError, ex:
-            raise ValidationException('Invalid URL. Returned code: ' + str(ex.code))
+            raise ValidationException('Invalid URL. ' + str(ex.reason))
         except ValueError, ex:
             # This exception is raised when the structure of filepath is invalid as a URL
             raise ValidationException('File could not be found at ' + filepath)
