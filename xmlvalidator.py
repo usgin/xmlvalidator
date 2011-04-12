@@ -1,5 +1,12 @@
-import libxml2, os, re, datetime
-from libxml2 import parserError, xpathError
+import os, re, datetime, urllib2
+from lxml import etree
+from urllib2 import URLError
+
+ns = {'gmd': 'http://www.isotc211.org/2005/gmd',
+      'gco': 'http://www.isotc211.org/2005/gco',
+      'gml': 'http://www.opengis.net/gml',
+      'xlink': 'http://www.w3.org/1999/xlink',
+      'xsi': 'http://www.w3.org/2001/XMLSchema-instance'}
 
 class ValidationException(Exception):
     def __init__(self, message='Validation problem'):
@@ -14,14 +21,25 @@ class ValidationReport(list):
         return '\n\n'.join(self)
             
 def record_is_valid(filepath, rule_set=None):
-    # Insure request is valid: filepath must point to a file 
-    if not os.path.exists(filepath): 
-        raise ValidationException('Requested filepath to validate is not valid: ' + str(filepath))
+    # First, is it a valid file?
+    if os.path.exists(filepath):
+        content = filepath
+        
+    else:
+        # Not a valid file. Is it a valid URL?
+        req = urllib2.Request(filepath)
+        try:
+            content = urllib2.urlopen(req)
+        except URLError, ex:
+            raise ValidationException('Invalid URL. ' + str(ex.reason))
+        except ValueError, ex:
+            # This exception is raised when the structure of filepath is invalid as a URL
+            raise ValidationException('File could not be found at ' + filepath)
     
-    # Insure file is valid: Must be parse-able by libxml2
+    # Insure the document is valid: Must be parse-able by lxml
     try:
-        doc = libxml2.parseFile(filepath)
-    except parserError as (ex):
+        doc = etree.parse(content)
+    except Exception as (ex):
         raise ValidationException(ex.msg)
     
     # Initiate a report
@@ -35,8 +53,7 @@ def record_is_valid(filepath, rule_set=None):
             report.append('FAILED: ' + rule.name + ' - ' + rule.description)
             
     # Validation has occurred. Return the result and report
-    doc.freeDoc()
-    return result, report.report_as_string()
+    return result, report
 
 def register_namespaces(doc):
     context = doc.xpathNewContext()
@@ -64,11 +81,9 @@ class ExistsRule(Rule):
         self.xpath = xpath
         
     def validate(self, doc):
-        context = register_namespaces(doc)
         try:
-            result = context.xpathEval(self.xpath)
-        except xpathError:
-            context.xpathFreeContext()
+            result = doc.xpath(self.xpath, namespaces=ns)
+        except Exception as (ex):
             return False
         
         if len(result) > 0:
@@ -77,7 +92,6 @@ class ExistsRule(Rule):
             result = False
             
         # Finished. Cleanup the context and return True
-        context.xpathFreeContext()
         return result
     
 class ValueInListRule(Rule):
@@ -92,16 +106,18 @@ class ValueInListRule(Rule):
         if exists_rule.validate(doc) == False: return False
         
         # Get the XPath nodes. ExistsRule already found that the XPath is valid, so I don't need to catch xpathEval failures here.
-        context = register_namespaces(doc)
-        nodes = context.xpathEval(self.xpath)
+        nodes = doc.xpath(self.xpath, namespaces=ns)
         
         # Loop through them and check the values
         result = True
         for node in nodes:
-            if node.content not in self.values: result = False
+            # XPath evaluation will either return an element with a text attribute, or a string straight-up
+            if hasattr(node, 'text'):
+                if node.text not in self.values: result = False
+            else:
+                if node not in self.values: result = False
         
         # Finished
-        context.xpathFreeContext()
         return result
     
 class AnyOfRule(Rule):
@@ -150,25 +166,28 @@ class ContentMatchesExpressionRule(Rule):
         if exists_rule.validate(doc) == False: return False
         
         # Get the XPath nodes. ExistsRule already found that the XPath is valid, so I don't need to catch xpathEval failures here.
-        context = register_namespaces(doc)
-        nodes = context.xpathEval(self.xpath)
+        nodes = doc.xpath(self.xpath, namespaces=ns)
         
         result = True
         for node in nodes:
+            if hasattr(node, 'text'):
+                content = node.text
+            else:
+                content = node
+                
             try:
-                match = re.match(self.expression, node.content)
+                match = re.match(self.expression, content)
                 # If there was no match, match will be None
                 if match == None: result = False
                 # If the regular expression had capture groups in it, there will be more than one. This indicates a poorly formed expression for this purpose.
                 if len(match.groups()) > 1: result = False
                 # If these lengths are different, then the RegEx only matched PART of the node's content.
-                if len(match.group(0)) != len(node.content): result = False
+                if len(match.group(0)) != len(content): result = False
             except:
                 # Likely caused by an invalid expression
                 return False
             
         # Finished
-        context.xpathFreeContext()
         return result
     
 class ConditionalRule(Rule):
