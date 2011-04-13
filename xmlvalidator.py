@@ -46,18 +46,13 @@ def record_is_valid(filepath, rule_set=None):
         content = filepath
         
     else:
-        # Not a valid file. Is it a valid URL?
-        req = urllib2.Request(filepath)
-        try:
+        valid, response = url_is_valid(filepath)
+        if not valid:
+            raise ValidationException(response)
+        else:
+            req = urllib2.Request(filepath)
             content = urllib2.urlopen(req)
-        except HTTPError, ex:
-            raise ValidationException('Invalid URL.' + str(ex.code))
-        except URLError, ex:
-            raise ValidationException('Invalid URL. ' + str(ex.reason))
-        except ValueError, ex:
-            # This exception is raised when the structure of filepath is invalid as a URL
-            raise ValidationException('File could not be found at ' + filepath)
-    
+            
     # Insure the document is valid: Must be parse-able by lxml
     try:
         doc = etree.parse(content)
@@ -77,15 +72,6 @@ def record_is_valid(filepath, rule_set=None):
     # Validation has occurred. Return the result and report
     return result, report
 
-def register_namespaces(doc):
-    context = doc.xpathNewContext()
-    context.xpathRegisterNs('gmd', 'http://www.isotc211.org/2005/gmd')
-    context.xpathRegisterNs('gco', 'http://www.isotc211.org/2005/gco')
-    context.xpathRegisterNs('gml', 'http://www.opengis.net/gml')
-    context.xpathRegisterNs('xlink', 'http://www.w3.org/1999/xlink')
-    context.xpathRegisterNs('xsi', 'http://www.w3.org/2001/XMLSchema-instance')
-    return context
-    
 class Rule():
     name = str()
     description = str()
