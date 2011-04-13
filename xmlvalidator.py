@@ -3,6 +3,7 @@ from lxml import etree
 from urllib2 import URLError, HTTPError
 
 ns = {'gmd': 'http://www.isotc211.org/2005/gmd',
+      'srv': 'http://www.isotc211.org/2005/srv',
       'gco': 'http://www.isotc211.org/2005/gco',
       'gml': 'http://www.opengis.net/gml',
       'xlink': 'http://www.w3.org/1999/xlink',
@@ -19,7 +20,26 @@ class ValidationReport(list):
         
     def report_as_string(self):
         return '\n\n'.join(self)
-            
+    
+def url_is_valid(url):
+    req = urllib2.Request(url)
+    result = True
+    response = ''
+    
+    try:
+        content = urllib2.urlopen(req)
+    except HTTPError, ex:
+        response = 'Invalid URL.' + str(ex.code)
+        result = False
+    except URLError, ex:
+        response = 'Invalid URL. ' + str(ex.reason)
+        result = False
+    except ValueError, ex:
+        response = 'Invalid URL Format: ' + url
+        result = False
+    
+    return result, response
+                
 def record_is_valid(filepath, rule_set=None):
     # First, is it a valid file?
     if os.path.exists(filepath):
@@ -76,7 +96,7 @@ class Rule():
         
     def validate(self, doc):
         raise NotImplementedError('Needs to be implemented in derived classes')
-    
+        
 class ExistsRule(Rule):
     def __init__(self, name, description, xpath):
         Rule.__init__(self, name, description)
@@ -95,7 +115,29 @@ class ExistsRule(Rule):
             
         # Finished. Cleanup the context and return True
         return result
-    
+
+class ValidUrlRule(Rule):
+    def __init__(self, name, description, xpath):
+        Rule.__init__(self, name, description)
+        self.xpath = xpath
+        
+    def validate(self, doc):
+        # Check that the XPath exists using an ExistsRule
+        exists_rule = ExistsRule(self.name, self.description, self.xpath)
+        if exists_rule.validate(doc) == False: return False
+        
+        nodes = doc.xpath(self.xpath, namespaces=ns)
+        for node in nodes:
+            # XPath evaluation will either return an element with a text attribute, or a string straight-up
+            if hasattr(node, 'text'):
+                result, response = url_is_valid(node.text)
+            else:
+                result, response = url_is_valid(node)
+            
+            if result == False: return False    
+        
+        return True
+        
 class ValueInListRule(Rule):
     def __init__(self, name, description, xpath, values):
         Rule.__init__(self, name, description)

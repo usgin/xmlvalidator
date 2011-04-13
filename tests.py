@@ -196,7 +196,14 @@ class RuleTests(unittest.TestCase):
         # Test for failure: Wrong number of rules given
         conditional_rule = ConditionalRule(self.name, self.desc, ['one', 'two', 'three'])
         self.assertFalse(conditional_rule.validate(self.valid_doc), 'Valid document validated against a ConditionalRule with the incorrect number of rules given')
+    
+    def test_valid_url_rule(self):
+        xpath = '//gmd:URL'
+        url_rule = ValidUrlRule(self.name, self.desc, xpath)
         
+        # Test for success
+        self.assertTrue(url_rule.validate(self.valid_doc), 'Valid document did not pass a URL is valid rule.')
+            
     def tearDown(self):
         #self.valid_doc.freeDoc()
         pass
