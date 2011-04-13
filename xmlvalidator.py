@@ -1,6 +1,6 @@
 import os, re, datetime, urllib2
 from lxml import etree
-from urllib2 import URLError
+from urllib2 import URLError, HTTPError
 
 ns = {'gmd': 'http://www.isotc211.org/2005/gmd',
       'gco': 'http://www.isotc211.org/2005/gco',
@@ -30,6 +30,8 @@ def record_is_valid(filepath, rule_set=None):
         req = urllib2.Request(filepath)
         try:
             content = urllib2.urlopen(req)
+        except HTTPError, ex:
+            raise ValidationException('Invalid URL.' + str(ex.code))
         except URLError, ex:
             raise ValidationException('Invalid URL. ' + str(ex.reason))
         except ValueError, ex:
