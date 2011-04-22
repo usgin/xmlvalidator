@@ -28,8 +28,8 @@ def example_validation():
     #  Syntax for building the rule: AnyOfRule(name, description, xpaths)
     any_of_rule = AnyOfRule(name='Metadata Contact: Individual or Organization',
                             description='Checks that the Metadata Contact has one of individualName or organisationName',
-                            xpaths=['/gmd:MD_Metadata/gmd:contact/gmd:CI_ResponsibleParty/gmd:individualName/gco:CharacterString',
-                                    '/gmd:MD_Metadata/gmd:contact/gmd:CI_ResponsibleParty/gmd:organisationName/gco:CharacterString'])
+                            xpaths=['//gmd:MD_Metadata/gmd:identificationInfo/gmd:MD_DataIdentification',
+                                    '//gmd:MD_Metadata/gmd:identificationInfo/srv:SV_ServiceIdentification'])
     validation_rules.append(any_of_rule)
     
     # OneOfRule is a special case for situations where you want one or the other XPath to exist, but more than one of them is an error.
@@ -45,11 +45,12 @@ def example_validation():
     
     # After putting together a set of rules, I call record_is_valid to return a Boolean determination of if it passed the rules
     #  Syntax for validation is record_is_valid(filepath, record_type, rule_set)
-    result = record_is_valid(file, metadata_type, validation_rules)
+    result, report = record_is_valid(file, validation_rules)
     if result == True: 
         print 'Hurrah!'
     else:
-        print 'Oh no!'
+        for item in report:
+            print item
     
 # Now that my method is defined... lets run it!
 example_validation()

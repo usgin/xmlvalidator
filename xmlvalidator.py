@@ -151,21 +151,36 @@ class ValueInListRule(Rule):
         return result
     
 class AnyOfRule(Rule):
-    def __init__(self, name, description, xpaths):
+    def __init__(self, name, description, xpaths, context='/'):
         Rule.__init__(self, name, description)
         self.xpaths = xpaths
-    
+        self.context = context
+        
     def validate(self, doc):
-        # For each XPath in xpaths, check that at least one exists using ExistsRules
-        count = 0
-        for xpath in self.xpaths:
-            exists_rule = ExistsRule(self.name, self.description, xpath)
-            if exists_rule.validate(doc) == True: count = count + 1
-            
-        if count > 0: 
-            return True 
-        else: 
+        try:
+            if self.context == '/':
+                nodes = doc.xpath(doc.getpath(doc.getroot()), namespaces=ns)
+            else:
+                nodes = doc.xpath(self.context, namespaces=ns)
+        except Exception as (ex):
             return False
+        
+        for node in nodes:
+            # For each XPath in xpaths, check that at least one exists using ExistsRules
+            count = 0
+            for xpath in self.xpaths:
+                if not xpath.startswith('//'):
+                    if not xpath.startswith(doc.getpath(node)):
+                        xpath = doc.getpath(node) + xpath
+                        
+                exists_rule = ExistsRule(self.name, self.description, xpath)
+                if exists_rule.validate(doc) == True: count = count + 1
+                
+            if count < 1: 
+                return False
+            
+        return True
+        
         
 class OneOfRule(Rule):
     def __init__(self, name, description, xpaths):

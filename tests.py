@@ -125,7 +125,19 @@ class RuleTests(unittest.TestCase):
         xpaths.append('/hibbity/haw/haw')
         one_of_rule = AnyOfRule(self.name, self.desc, xpaths)
         self.assertFalse(one_of_rule.validate(self.valid_doc), 'Valid document did not fail validation against an invalid AnyOf Rule.')
-    
+        
+        # Test context success
+        context_doc = etree.parse(os.path.join(os.path.abspath(os.path.dirname(__file__)), 'test-files', 'context-test.xml'))
+        context = '//thing'
+        xpaths = ['/one', '/two']
+        one_of_rule = AnyOfRule(self.name, self.desc, xpaths, context)
+        self.assertTrue(one_of_rule.validate(context_doc))
+        
+        # Test context failure
+        xpaths = ['/three']
+        one_of_rule = AnyOfRule(self.name, self.desc, xpaths, context)
+        self.assertFalse(one_of_rule.validate(context_doc))
+        
     def test_either_or_rule(self):
         xpaths = ['/clothing/footwear/sneakers', '/clothing/footwear/hightops']
         file = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'test-files', 'either-or-test.xml')

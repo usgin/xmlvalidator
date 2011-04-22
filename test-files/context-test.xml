@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<things>
+	<thing>
+		<one>One</one>
+		<two>Two</two>
+		<three>Three</three>
+	</thing>
+	<thing>
+		<one>Oh One</one>
+		<two>Oh Two</two>
+	</thing>
+</things>
